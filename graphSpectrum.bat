@@ -1,0 +1,2 @@
+python makeSpectrum.py
+pause
