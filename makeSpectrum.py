@@ -4,26 +4,34 @@ import matplotlib.pyplot as plt
 import random
 
 ###---------Default File name------------
-filename = 'D:\\CRDdata\\new_data\\DENEME.txt'
+filename = '../new_data/5-30-2016.txt'
 #filename = input("Enter Input file name: ") ##User file input
 
 ###-----------Wavlength Fit Coefficents------------
-wavelengthFitFile = 'D:\\CRDdata\\wavelengthFit'
+wavelengthFitFile = '../wavelengthFit'
 
 ###-------------Parameters------------
 chiSquareBounds = [10**-5, 5.9*10**-5]
+reject_chiSquare = False
+
 ringdownBounds = [10**-5, 30*10**-4]
+reject_ringdown  = False
+
 threeTauBounds = [10**-6, 1*10**-4]
-wlBounds = [1650, 1655] 
+reject_threeTau  = False
+
+wlBounds = [1650, 1655]
+reject_wlBounds  = True
+ 
 maxErr = 7*10**-4
 correctPredictedWL = False
 wavelengthTolerance = 0.1
 
 ###----------Final Filename output for Matlab Fitting---------------
 dataOut = filename + "_dataDump.csv"
-namesplit = str.split(filename,'.')  #peel off file extension and append _dataDump.csv to filename
-if(len(namesplit) > 1):
-    dataOut = namesplit[0] + "_dataDump.csv"
+if(filename[::-1].index('.') > filename[::-1].index('/')):
+    dotIndex = filename[::-1]
+    dataOut = filename[0:dotIndex] + '_dataDump.csv'
 
 ###Program Start
 file = open(filename,'r')
@@ -61,13 +69,14 @@ for line in file:
             if(len(vals) > 0):
                 val = []
                 for v in vals:
-                    if((v[1] > -1.0/ringdownBounds[0]) & (v[1] < -1.0/ringdownBounds[1])):
-                        val.append(-1.0/v[1])
+                    if(not reject_ringdown or ((v[1] > -1.0/ringdownBounds[0]) and (v[1] < -1.0/ringdownBounds[1]))):
+                        if(v[1]!=0):
+                            val.append(-1.0/v[1])
                 meds = bootstrapMedian(val)
                 #meds = [np.mean(val), 0.0]
                 if(meds[1] < maxErr):                   #reject point if bootstrap error too large
                     wlMeasure = laserInfo[0]
-                    if((wlMeasure > wlBounds[0]) & (wlMeasure < wlBounds[1])):
+                    if(not reject_wlBounds or ((wlMeasure > wlBounds[0]) & (wlMeasure < wlBounds[1]))):
                         spectrum[0].append( laserInfo[0] )      #wavelength measurement
                         #spectrum[0].append( wavelengthPredicted(laserInfo[1],laserInfo[3]) )      #wavelength
                         spectrum[1].append( meds[0] )           #median Ringdown time
@@ -87,10 +96,10 @@ for line in file:
         else:
             l = str.split(line,'\t')
             err = float(l[3])            
-            if((err > chiSquareBounds[0]) & (err < chiSquareBounds[1])):
+            if(not reject_chiSquare or ((err > chiSquareBounds[0]) & (err < chiSquareBounds[1]))):
                 if((len(l) >= 6)):              #compatibility with datasets not containing three tau error
                     threeTau = float(l[5])
-                    if((threeTau < threeTauBounds[0]) | (threeTau > threeTauBounds[1])):
+                    if(reject_threeTau and ((threeTau < threeTauBounds[0]) | (threeTau > threeTauBounds[1]))):
                         continue
                 ln = []
                 for v in l:
