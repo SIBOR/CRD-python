@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import random
 
 ###---------Default File name------------
-filename = '../new_data/5-30-2016.txt'
+filename = '../new_data/06-19-2016.txt'
 #filename = input("Enter Input file name: ") ##User file input
 
 ###-----------Wavlength Fit Coefficents------------
@@ -21,7 +21,7 @@ threeTauBounds = [10**-6, 1*10**-4]
 reject_threeTau  = False
 
 wlBounds = [1650, 1655]
-reject_wlBounds  = True
+reject_wlBounds  = False
  
 maxErr = 7*10**-4
 correctPredictedWL = False
@@ -62,10 +62,12 @@ def bootstrapMedian(dat):
     avSqr=np.mean(mediansSqr)
     
     return [av, np.sqrt(avSqr - av**2)]
-
+    
+#----------------------------Program Start-----------------------------
+    
 for line in file:
     if(line[0] != '#'):
-        if(line[0:2] == '$$'):
+        if(len(line) > 2 and line[0:2] == '$$'):
             if(len(vals) > 0):
                 val = []
                 for v in vals:
@@ -77,8 +79,10 @@ for line in file:
                 if(meds[1] < maxErr):                   #reject point if bootstrap error too large
                     wlMeasure = laserInfo[0]
                     if(not reject_wlBounds or ((wlMeasure > wlBounds[0]) & (wlMeasure < wlBounds[1]))):
-                        spectrum[0].append( laserInfo[0] )      #wavelength measurement
-                        #spectrum[0].append( wavelengthPredicted(laserInfo[1],laserInfo[3]) )      #wavelength
+                        if(((wlMeasure > wlBounds[0]) & (wlMeasure < wlBounds[1]))):
+                            spectrum[0].append( laserInfo[0] )      #wavelength measurement
+                        else:
+                            spectrum[0].append( wavelengthPredicted(laserInfo[1],laserInfo[3]) )      #wavelength
                         spectrum[1].append( meds[0] )           #median Ringdown time
                         spectrum[2].append( meds[1] )           #error of median ringdown time
                         spectrum[3].append( val )               #array of individual ringdown times
@@ -88,8 +92,8 @@ for line in file:
             ln = str.split(line[2:],'_')
             laserInfo = []
             for v in ln:
-                if((v != 'L') & (v != 'T') & (v != 'TR') & (v != 'I') & (v != 'IS') & (v != '')):
-                    if((v != 'WavemeterDisabled') & ('LAOP' not in v) & ('Error' not in v)):
+                if((v != 'L') & (v != 'T') & (v != 'TR') & (v != 'I') & (v != 'IS')):
+                    if((v != 'WavemeterDisabled') & ('LAOP' not in v) & ('Error' not in v) & (len(v) > 0)):
                         laserInfo.append(float(v))
                     else:
                         laserInfo.append(0.0)
